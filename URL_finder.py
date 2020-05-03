@@ -1,5 +1,5 @@
 """
-File name: URLfinder.py
+File name: URL_finder.py
 Purpose: Finds valid URL links within a file and gives the user the option to navigate to a link.
 """
 import re
