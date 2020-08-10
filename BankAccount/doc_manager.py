@@ -18,15 +18,21 @@ class DocManager:
                                                  '-' * 100))
 
     def overdraft_notice(self, timestamp):
-        with open(self.statement_file, 'a') as f:
-            f.write('{}\n- ${:.2f} (OVERDRAFT FEE)\nBalance: ${:.2f}\n{}\n'.format(timestamp.strftime('%B %d, %Y'),
-                                                                                   self.account.overdraft_fee,
-                                                                                   self.account.balance, '-' * 100))
+        with open(self.statement_file, 'a') as f1:
+            f1.write('{}\n- ${:.2f} (OVERDRAFT FEE)\nBalance: ${:.2f}\n{}\n'.format(timestamp.strftime('%B %d, %Y'),
+                                                                                    self.account.overdraft_fee,
+                                                                                    self.account.balance, '-' * 100))
+        with open(self.notice_file, 'a') as f2:
+            f2.write('{}\nDear {},\nYour account has dropped beneath the minimum balance of ${:.2f}. An overdraft fee '
+                     'of ${:.2f} has been \ncharged to your account.\n{}'
+                     '\n'.format(timestamp.strftime('%B %d, %Y'), self.account.owners[0].name.split()[0],
+                                 self.account.minimum_bal, self.account.overdraft_fee, '-' * 100))
+
+    def insufficient_balance_notice(self, timestamp, amount: float):
         with open(self.notice_file, 'a') as f:
-            f.write('{}\nDear {},\nYour account has dropped beneath the minimum balance of ${:.2f}. An overdraft fee '
-                    'of ${:.2f} has been \ncharged to your account.\n{}'
-                    '\n'.format(timestamp.strftime('%B %d, %Y'), self.account.owners[0].name.split()[0],
-                                self.account.minimum_bal, self.account.overdraft_fee, '-' * 100))
+            f.write('{}\nDear {},\nYou attempted to withdraw ${:.2f} but you only had ${:.2f}. Transaction not '
+                    'approved.\n{}\n'.format(timestamp.strftime('%B %d, %Y'), self.account.owners[0].name.split()[0],
+                                             amount, self.account.balance, '-' * 100))
 
     def transaction_notice(self, trans_type: str, amount: float, timestamp):
         if trans_type == 'deposit':
