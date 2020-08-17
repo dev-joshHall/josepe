@@ -2,6 +2,7 @@ class Administration:
     def __init__(self):
         self.accounts = []
         self.admins = []
+        self.customers = []
 
     def add_account(self, account):
         if hasattr(account, 'balance'):
@@ -64,7 +65,7 @@ class Administration:
         """
         pass
 
-    def login(self, username, password):
+    def admin_login(self, username, password):
         booleans = [False, False]
         for administrator in self.admins:
             if username in (administrator.username, administrator.email):
@@ -74,6 +75,19 @@ class Administration:
                 return tuple(booleans)
         else:
             return tuple(booleans)  # neither username or password are valid
+
+    def customer_login(self, username, password):
+        username = username.strip()
+        password = password.strip()
+        booleans = [False, False]
+        for customer in self.customers:
+            if username == customer.email:
+                booleans[0] = True  # email is valid
+                if password == customer.password:
+                    booleans[1] = True  # password is valid
+                return tuple(booleans), customer  # return success booleans and customer object
+        else:
+            return tuple(booleans), None  # neither username or password are valid
 
     def logout(self):
         pass
@@ -92,9 +106,11 @@ class Administrator:
         return 'Admin: {}'.format(self.username)
 
 
+admin = Administration()
+
+
 if __name__ == '__main__':
-    admin = Administration()
     josh = Administrator('Josh Hall', 'jchcaleb@gmail.com', 'blabla', '3921924938', admin)
-    # success = josh.administration.login('Josh Hall', 'blabla')
+    # success = josh.administration.admin_login('Josh Hall', 'blabla')
     # print(admin.admins)
     # print(success)

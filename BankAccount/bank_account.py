@@ -2,7 +2,7 @@ from datetime import datetime as dt
 from random import randint
 from doc_manager import DocManager
 from customer import Customer
-from admin import Administration, Administrator
+from admin import Administration, Administrator, admin
 
 
 class BankAccount:
@@ -120,16 +120,15 @@ class SavingsAccount(BankAccount):
 
 
 if __name__ == '__main__':
-    admin = Administration()
-    maggy = Customer('Maggy', 39, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'blabla')
-    steve = Customer('Steve', 18, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'password')
+    maggy = Customer('Maggy', 39, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'blabla', admin)
+    steve = Customer('Steve', 18, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'password', admin)
     acc_1 = SavingsAccount(owners=[maggy], interest=.03, balance=300, minimum_bal=250, overdraft_fee=5,
                            withdrawal_lim=2, administration=admin)
     # print('History: {}\nBalance: {}'.format(acc_1.history, acc_1.balance))
-    # acc_1.deposit(300)
-    # acc_1.withdraw(150)
-    # acc_1.withdraw(5)
-    # acc_1.withdraw(800)
+    acc_1.deposit(300)
+    acc_1.withdraw(150)
+    acc_1.withdraw(5)
+    acc_1.withdraw(800)
     # print('History: {}\nBalance: {}'.format(acc_1.history, acc_1.balance))
     # print(acc_1.owners)
     # print(maggy.bank_accounts)
