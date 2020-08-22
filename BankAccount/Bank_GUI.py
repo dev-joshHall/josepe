@@ -222,9 +222,9 @@ def homepage_window(user):
 
     root.title('Josepe Bank (not a real bank) - {}\'s profile'.format(user.name.split()[0]))
     clear_window()
-    img_1 = ImageTk.PhotoImage(Image.open('C:/Users/jchca/OneDrive/Pictures/Saved Pictures/stack-of-manuals.png'))
-    img_2 = ImageTk.PhotoImage(Image.open('C:/Users/jchca/OneDrive/Pictures/Saved Pictures/accounts.jpg'))
-    img_3 = ImageTk.PhotoImage(Image.open('C:/Users/jchca/OneDrive/Pictures/Saved Pictures/settings.jpg'))
+    img_1 = ImageTk.PhotoImage(Image.open('stack-of-manuals.png'))
+    img_2 = ImageTk.PhotoImage(Image.open('accounts.jpg'))
+    img_3 = ImageTk.PhotoImage(Image.open('settings.jpg'))
     img_4 = img_logo.resize((604, 180), Image.ANTIALIAS)
     img_4 = ImageTk.PhotoImage(img_4)
     img_label = tk.Label(master=root, image=img_4, padx=0)
@@ -408,10 +408,10 @@ def login_page():
 if __name__ == '__main__':
     root = tk.Tk()
     root.title('Josepe Bank (not a real bank)')
-    logo_icon = ImageTk.PhotoImage(Image.open('C:/Users/jchca/OneDrive/Pictures/Saved Pictures/logo_icon.ico'))
+    logo_icon = ImageTk.PhotoImage(Image.open('logo_icon.ico'))
     root.tk.call('wm', 'iconphoto', root._w, logo_icon)
     root.configure(bg='white')
-    img_logo = Image.open('C:/Users/jchca/OneDrive/Pictures/Saved Pictures/JosepeBankLogo.png')
+    img_logo = Image.open('JosepeBankLogo.png')
     elements = {}
     radio_val = tk.StringVar()
     radio_val2 = tk.StringVar()
