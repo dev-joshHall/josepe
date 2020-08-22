@@ -6,18 +6,18 @@ from admin import Administration, Administrator, admin
 
 
 class BankAccount:
-    def __init__(self, owners: list, interest: float, balance: float, minimum_bal: float, overdraft_fee: float,
-                 administration):
+    def __init__(self, owners: list, balance: float, administration):
         if owners:
             self.owners = owners
         else:
             raise TypeError('Expected list of Customer object(s) in self.owners, but got empty list []')
         for owner in self.owners:
             owner.bank_accounts.append(self)
-        self.interest = interest
+        self.interest = None
         self.balance = balance
-        self.minimum_bal = minimum_bal
-        self.overdraft_fee = overdraft_fee
+        self.minimum_bal = 30
+        self.overdraft_fee = 5
+        self.max_owner_qty = 2
         self.administration = administration
         self.administration.add_account(self)  # add this account to Administration's list of accounts
         # vv I need to change this! vv
@@ -32,7 +32,7 @@ class BankAccount:
                                                   if self.owners else 'None')
 
     def add_customer(self, customer):
-        if len(self.owners) < 2:
+        if len(self.owners) < self.max_owner_qty:
             self.owners.append(customer)
             customer.bank_accounts.append(self)
             self.doc_manager.add_customer_notice(customer, dt.today())
@@ -42,8 +42,10 @@ class BankAccount:
     def remove_customer(self, customer):
         if customer in self.owners and len(self.owners) > 1:
             self.owners.remove(customer)
+            customer.bank_accounts.remove(self)
             self.doc_manager.remove_customer_notice(customer, dt.today())
         elif customer in self.owners and len(self.owners) == 1:
+            customer.bank_accounts.remove(self)
             self.owners.remove(customer)
             self.doc_manager.no_owner_notice(dt.today())
         else:
@@ -71,6 +73,10 @@ class BankAccount:
 
 
 class CheckingAccount(BankAccount):
+    def __init__(self, owners, balance, administration):
+        super(CheckingAccount, self).__init__(owners, balance, administration)
+        self.interest = .1
+
     def withdraw(self, amount: float):
         if amount > 0:
             self.balance -= amount
@@ -90,9 +96,10 @@ class CheckingAccount(BankAccount):
 
 
 class SavingsAccount(BankAccount):
-    def __init__(self, owners, interest, balance, minimum_bal, overdraft_fee, administration, withdrawal_lim: int):
-        super(SavingsAccount, self).__init__(owners, interest, balance, minimum_bal, overdraft_fee, administration)
-        self.withdrawal_lim = withdrawal_lim
+    def __init__(self, owners, balance, administration):
+        super(SavingsAccount, self).__init__(owners, balance, administration)
+        self.withdrawal_lim = 2
+        self.interest = .3
 
     def withdraw(self, amount: float):
         timestamp = dt.today()
@@ -122,8 +129,7 @@ class SavingsAccount(BankAccount):
 if __name__ == '__main__':
     maggy = Customer('Maggy', 39, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'blabla', admin)
     steve = Customer('Steve', 18, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'password', admin)
-    acc_1 = SavingsAccount(owners=[maggy], interest=.03, balance=300, minimum_bal=250, overdraft_fee=5,
-                           withdrawal_lim=2, administration=admin)
+    acc_1 = SavingsAccount(owners=[maggy], balance=300, administration=admin)
     # print('History: {}\nBalance: {}'.format(acc_1.history, acc_1.balance))
     acc_1.deposit(300)
     acc_1.withdraw(150)
