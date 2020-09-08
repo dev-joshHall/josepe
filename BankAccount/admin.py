@@ -11,12 +11,23 @@ class Administration:
             raise TypeError('{} is not an account'.format(account))
 
     def add_admin(self, administrator):
+        """
+        Adds an administrator to the administrator list.
+        :param administrator: Administrator object
+        :return: None
+        """
         if isinstance(administrator, Administrator):
             self.admins.append(administrator)
         else:
             raise TypeError('{} is not an administrator'.format(administrator))
 
     def change_overdraft_fee(self, new_fee, account):
+        """
+        Changes the overdraft fee for an account
+        :param new_fee: float US Dollar amount
+        :param account: BankAccount object
+        :return: None
+        """
         if account in self.accounts:
             if new_fee >= 0:
                 account.overdraft_fee = new_fee
@@ -88,9 +99,6 @@ class Administration:
                 return tuple(booleans), customer  # return success booleans and customer object
         else:
             return tuple(booleans), None  # neither username or password are valid
-
-    def logout(self):
-        pass
 
 
 class Administrator:

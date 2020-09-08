@@ -26,6 +26,8 @@ def main():
     if visit_site in ("Y" or "YES"):
         site_num = int(input("Enter the number for you like to visit: "))
         wb.open(site_dict[site_num])
+    website = 'google.com'
+    website2 = 'yahoo.com'
 
 
 if __name__ == '__main__':

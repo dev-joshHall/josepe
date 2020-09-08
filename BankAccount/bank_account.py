@@ -27,11 +27,16 @@ class BankAccount:
 
     def __repr__(self):
         owner_names = [owner.name for owner in self.owners]
-        return 'Account: {};\tOwner{}: {}'.format(self.account_number, 's' if len(self.owners) == 2 else '',
+        return 'Account: {};\tOwner{}: {}'.format(self.account_number, 's' if len(self.owners) > 1 else '',
                                                   ', '.join([name.split()[0] for name in owner_names])
                                                   if self.owners else 'None')
 
     def add_customer(self, customer):
+        """
+        Adds a customer to associated object lists. Writes a notice to the user.
+        :param customer: Customer object
+        :return: None
+        """
         if len(self.owners) < self.max_owner_qty:
             self.owners.append(customer)
             customer.bank_accounts.append(self)
@@ -40,6 +45,11 @@ class BankAccount:
             raise TypeError('Maximum number of customers reached. Cannot add additional customers to account.')
 
     def remove_customer(self, customer):
+        """
+        Removes a customer from associated object lists. Writes a notice to the user.
+        :param customer: Customer object
+        :return: None
+        """
         if customer in self.owners and len(self.owners) > 1:
             self.owners.remove(customer)
             customer.bank_accounts.remove(self)
@@ -52,10 +62,19 @@ class BankAccount:
             raise TypeError('{} was not an owner of this account'.format(customer))
 
     def charge_overdraft_fee(self):
+        """
+        Charges an overdraft fee to the account. Writes a notice to the user.
+        :return: None
+        """
         self.balance -= self.overdraft_fee
         self.doc_manager.overdraft_notice(dt.today())
 
     def deposit(self, amount: float):
+        """
+        Adds a given amount to the bank account. Add transaction to account's history. Notify the user of transaction.
+        :param amount: float dollar amount
+        :return: None
+        """
         if amount > 0:
             self.balance += amount
             timestamp = dt.today()
@@ -66,7 +85,6 @@ class BankAccount:
                     'Balance': self.balance
                 }
             )
-            # write transaction notice
             self.doc_manager.transaction_notice(trans_type='deposit', amount=amount, timestamp=timestamp)
         else:
             raise ValueError('Deposit amount must be positive')
@@ -78,6 +96,11 @@ class CheckingAccount(BankAccount):
         self.interest = .1
 
     def withdraw(self, amount: float):
+        """
+        Removes an amount from the account's balance. Adds transaction to accounts history and notifies the user.
+        :param amount: float amount of US Dollars
+        :return: None
+        """
         if amount > 0:
             self.balance -= amount
             timestamp = dt.today()
@@ -102,6 +125,12 @@ class SavingsAccount(BankAccount):
         self.interest = .3
 
     def withdraw(self, amount: float):
+        """
+        Removes an amount from the account's balance. Adds transaction to accounts history and notifies the user.
+        Transaction is not approved if the number of withdrawals is at the withdrawal limit.
+        :param amount: float amount of US Dollars
+        :return: None
+        """
         timestamp = dt.today()
         if len(self.history['Withdrawals']) < self.withdrawal_lim:
             if 0 < amount <= self.balance:
@@ -127,6 +156,7 @@ class SavingsAccount(BankAccount):
 
 
 if __name__ == '__main__':
+    """Used to test the classes"""
     maggy = Customer('Maggy', 39, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'blabla', admin)
     steve = Customer('Steve', 18, '1020 N 550 S Heber, UT', '9807593056', 'maggysmith@gmail.com', 'password', admin)
     acc_1 = SavingsAccount(owners=[maggy], balance=300, administration=admin)

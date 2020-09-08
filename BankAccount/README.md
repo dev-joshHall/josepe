@@ -1,4 +1,4 @@
-###Bank Account Explaination
+###Bank Account Explanation
 
 8/21/2020
 

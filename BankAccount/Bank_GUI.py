@@ -1,8 +1,10 @@
 import tkinter as tk
+from tkinter import ttk
 import re
 from PIL import ImageTk, Image
 from tkinter import messagebox
 from datetime import datetime
+from googletrans import Translator
 from bank_account import *
 from admin import admin
 
@@ -24,16 +26,29 @@ def clear_window(exclude: list = None):
             old_el.grid_forget()
 
 
+def translate(text):
+    if settings['language'] != 'en':
+        return tran.translate(text, dest=settings['language']).text
+    return text
+
+
+def update_language(_):
+    if lang_val.get() == '':
+        settings['language'] = 'en'
+    else:
+        settings['language'] = lang_symbols[lang_val.get()]
+
+
 def handle_focus_in(entry, display):
     if entry.get() == display:
         entry.delete(0, tk.END)
-    entry.config(fg='black')
+    entry.config()
 
 
 def handle_focus_out(entry, display):
     if len(entry.get()) == 0:
         entry.delete(0, tk.END)
-        entry.config(fg='grey')
+        entry.config()
         entry.insert(0, display)
 
 
@@ -46,35 +61,35 @@ def accounts_window(user):
                     amount = float(amount)
                     if radio_val.get() == 'deposit':
                         bank_account.deposit(amount)
-                        messagebox.showinfo(message='${:.2f} has been deposited'.format(amount))
+                        messagebox.showinfo(message=translate('${:.2f} has been deposited'.format(amount)))
                         amount_entry.delete(0, tk.END)
                     elif radio_val.get() == 'withdraw':
                         bank_account.withdraw(amount)
-                        messagebox.showinfo(message='${:.2f} has been withdrawn'.format(amount))
+                        messagebox.showinfo(message=translate('${:.2f} has been withdrawn'.format(amount)))
                         amount_entry.delete(0, tk.END)
                     else:
-                        messagebox.showinfo(message='Select transaction type')
+                        messagebox.showinfo(message=translate('Select transaction type'))
                 else:
-                    messagebox.showinfo(message='Enter an amount (US Dollars)')
+                    messagebox.showinfo(message=translate('Enter an amount (US Dollars)'))
 
             clear_window(exclude=['img label', 'signout button', 'back button'])
             back_btn.config(command=lambda: select_option(bank_account))
             elements['img label'].grid(row=0, column=0, columnspan=3)
             elements['signout button'].grid(row=1, column=2, sticky='nes')
             radio_val.set(None)
-            deposit_radio = tk.Radiobutton(master=root, text='Deposit', variable=radio_val, value='deposit', bg='white',
-                                           pady=5)
-            withdraw_radio = tk.Radiobutton(master=root, text='Withdraw', variable=radio_val, value='withdraw',
-                                            bg='white', pady=5)
-            amount_entry = tk.Entry(master=root, bg='#F0F0F0', fg='grey')
-            process_button = tk.Button(master=root, text='Process Transaction', padx=5, pady=5, command=process_command)
+            deposit_radio = ttk.Radiobutton(master=root, text=translate('Deposit'), variable=radio_val, value='deposit',
+                                            style='Wild.TRadiobutton')
+            withdraw_radio = ttk.Radiobutton(master=root, text=translate('Withdraw'), variable=radio_val,
+                                             value='withdraw', style='Wild.TRadiobutton')
+            amount_entry = ttk.Entry(master=root)
+            process_button = ttk.Button(master=root, text=translate('Process Transaction'), command=process_command)
             deposit_radio.grid(row=2, column=1)
             withdraw_radio.grid(row=3, column=1)
             amount_entry.grid(row=4, column=1)
             process_button.grid(row=5, column=1, pady=5, padx=5)
-            amount_entry.insert(0, 'Amount')
-            amount_entry.bind("<FocusIn>", lambda x: handle_focus_in(amount_entry, 'Amount'))
-            amount_entry.bind("<FocusOut>", lambda x: handle_focus_out(amount_entry, 'Amount'))
+            amount_entry.insert(0, translate('Amount'))
+            amount_entry.bind("<FocusIn>", lambda x: handle_focus_in(amount_entry, translate('Amount')))
+            amount_entry.bind("<FocusOut>", lambda x: handle_focus_out(amount_entry, translate('Amount')))
             elements['deposit radio'] = deposit_radio
             elements['withdraw radio'] = withdraw_radio
             elements['amount entry'] = amount_entry
@@ -84,34 +99,70 @@ def accounts_window(user):
             def remove_owner(account_owner):
                 bank_account.remove_customer(account_owner)
                 manage_owners()
+
+            def add_owner_window():
+                def add_owner():
+                    username = owner_username_entry.get()
+                    owner_username_entry.delete(0, tk.END)
+                    if username:
+                        for customer in admin.customers:
+                            if customer.email == username:
+                                if customer not in bank_account.owners:
+                                    bank_account.add_customer(customer)
+                                    messagebox.showinfo(
+                                        message=translate('{} successfully added to account'.format(customer.name)))
+                                else:
+                                    messagebox.showinfo(
+                                        message=translate('{} is already an account owner'.format(customer.name)))
+                                break
+                        else:
+                            messagebox.showinfo(message=translate('Customer \'{}\' not found'.format(username)))
+                    else:
+                        messagebox.showinfo(
+                            message=translate('Enter the username for a customer\nto add to the account'))
+                clear_window(exclude=['img label', 'signout button', 'back button'])
+                back_btn.config(command=manage_owners)
+                owner_username_lbl = ttk.Label(master=root, text=translate('Username:'), style='BW.TLabel')
+                owner_username_entry = ttk.Entry(master=root)
+                add_owner_btn = ttk.Button(master=root, text=translate('Add Owner'), command=add_owner)
+                owner_username_lbl.grid(row=3, column=0)
+                owner_username_entry.grid(row=3, column=1)
+                add_owner_btn.grid(row=4, column=0, columnspan=2)
+                elements['owner username lbl'] = owner_username_lbl
+                elements['owner username entry'] = owner_username_entry
+                elements['add owner btn'] = add_owner_btn
             clear_window(exclude=['img label', 'signout button', 'back button'])
             back_btn.config(command=lambda: select_option(bank_account))
             if bank_account.owners:
                 label_text = 'Owners for account ***-****-{}:'.format(bank_account.account_number[-4:])
             else:
                 label_text = 'There are no owners for account ***-****-{}:'.format(bank_account.account_number[-4:])
-            owners_label = tk.Label(master=root, pady=5, bg='white', text=label_text)
-            row_to_grid = 2
-            owners_label.grid(row=row_to_grid, column=0, columnspan=2, sticky='nesw')
+            owners_label = ttk.Label(master=root, text=translate(label_text), style='BW.TLabel')
+            row_to_grid = 3
+            owners_label.grid(row=2, column=0, columnspan=2, sticky='nesw')
             elements['owners label'] = owners_label
             for owner in bank_account.owners:
-                row_to_grid += 1
-                lbl = tk.Label(master=root, text=owner.name if owner else 'None', pady=5, bg='white')
+                lbl = ttk.Label(master=root, text=owner.name if owner else 'None', style='BW.TLabel')
                 lbl.grid(row=row_to_grid, column=0)
-                btn = tk.Button(master=root, text='Remove Owner', command=lambda: remove_owner(owner), pady=5, padx=5)
-                btn.grid(row=row_to_grid, column=1, sticky='nsw')
-                elements['owner label {}'.format(row_to_grid - 2)] = lbl
-                elements['owner remove button {}'.format(row_to_grid - 2)] = btn
+                btn = ttk.Button(master=root, text=translate('Remove Owner'), command=lambda: remove_owner(owner))
+                btn.grid(row=row_to_grid, column=1)
+                row_to_grid += 1
+                elements['owner label {}'.format(row_to_grid - 3)] = lbl
+                elements['owner remove button {}'.format(row_to_grid - 3)] = btn
+            add_owner_button = ttk.Button(master=root, text=translate('Add Owner'), command=add_owner_window)
+            add_owner_button.grid(row=row_to_grid, column=0, columnspan=2)
+            elements['add owner button'] = add_owner_button
 
         clear_window(exclude=['img label', 'signout button', 'back button'])
         elements['img label'].grid(row=0, column=0, columnspan=2)
         elements['signout button'].grid(row=1, column=1, sticky='nes')
         back_btn.config(command=lambda: accounts_window(user))
-        trans_option_button = tk.Button(master=root, text='Deposit or Withdraw Money', command=transaction_win, pady=10)
-        manage_owners_button = tk.Button(master=root, text='Add or Remove Account Owners', command=manage_owners,
-                                         pady=10)
-        trans_option_button.grid(row=2, column=0, columnspan=2, sticky='nesw')
-        manage_owners_button.grid(row=3, column=0, columnspan=2, sticky='nesw')
+        trans_option_button = ttk.Button(master=root, text=translate('Deposit or Withdraw Money'),
+                                         command=transaction_win)
+        manage_owners_button = ttk.Button(master=root, text=translate('Add or Remove Account Owners'),
+                                          command=manage_owners)
+        trans_option_button.grid(row=2, column=0, columnspan=2, sticky='nesw', ipady=10)
+        manage_owners_button.grid(row=3, column=0, columnspan=2, sticky='nesw', ipady=10)
         elements['transaction option button'] = trans_option_button
         elements['manage owners button'] = manage_owners_button
 
@@ -122,26 +173,30 @@ def accounts_window(user):
                 amount = float(amount)
                 if radio_val2.get() == 'savings':
                     new_account = SavingsAccount(owners=[user], balance=amount, administration=admin)
-                    messagebox.showinfo(message='Your account {}\nhas been created'.format(new_account.account_number))
+                    messagebox.showinfo(message=translate('Your account {}\nhas been '
+                                                          'created'.format(new_account.account_number)))
                     start_dep_entry.delete(0, tk.END)
                 elif radio_val2.get() == 'checking':
                     new_account = CheckingAccount(owners=[user], balance=amount, administration=admin)
-                    messagebox.showinfo(message='Your account {}\nhas been created'.format(new_account.account_number))
+                    messagebox.showinfo(message=translate('Your account {}\nhas been '
+                                                          'created'.format(new_account.account_number)))
                     start_dep_entry.delete(0, tk.END)
                 else:
-                    messagebox.showinfo(message='Select account type')
+                    messagebox.showinfo(message=translate('Select account type'))
             else:
-                messagebox.showinfo(message='Enter an amount (US Dollars)')
+                messagebox.showinfo(message=translate('Enter an amount (US Dollars)'))
 
         clear_window(exclude=['img label', 'signout button', 'back button'])
         back_btn.config(command=lambda: accounts_window(user))
-        acc_type_label = tk.Label(master=root, text='Account type:', pady=5, bg='white')
-        start_dep_label = tk.Label(master=root, text='Initial deposit:', pady=5, bg='white')
-        start_dep_entry = tk.Entry(master=root, bg='#F0F0F0')
-        create_acc_button = tk.Button(master=root, text='Create Account', command=create_account, pady=5, padx=10)
+        acc_type_label = ttk.Label(master=root, text=translate('Account type:'), style='BW.TLabel')
+        start_dep_label = ttk.Label(master=root, text=translate('Initial deposit:'), style='BW.TLabel')
+        start_dep_entry = ttk.Entry(master=root)
+        create_acc_button = ttk.Button(master=root, text=translate('Create Account'), command=create_account)
         radio_val2.set(None)
-        savings_radio = tk.Radiobutton(master=root, text='Savings', variable=radio_val2, value='savings', bg='white')
-        checking_radio = tk.Radiobutton(master=root, text='Checking', variable=radio_val2, value='checking', bg='white')
+        savings_radio = ttk.Radiobutton(master=root, text=translate('Savings'), variable=radio_val2, value='savings',
+                                        style='Wild.TRadiobutton')
+        checking_radio = ttk.Radiobutton(master=root, text=translate('Checking'), variable=radio_val2, value='checking',
+                                         style='Wild.TRadiobutton')
         acc_type_label.grid(row=2, column=0)
         savings_radio.grid(row=2, column=1)
         checking_radio.grid(row=3, column=1)
@@ -159,18 +214,18 @@ def accounts_window(user):
     elements['img label'].grid(row=0, column=0, columnspan=2)
     elements['signout button'].grid(row=1, column=1, sticky='nes')
     root.title('Josepe Bank (not a real bank) - {}\'s Accounts'.format(user.name.split()[0]))
-    back_btn = tk.Button(master=root, text='Back', command=lambda: homepage_window(user))
+    back_btn = ttk.Button(master=root, text=translate('Back'), command=lambda: homepage_window(user))
     back_btn.grid(row=1, column=0, sticky='nsw')
     row = 2
     for account in user.bank_accounts:
-        button = tk.Button(text='Account: ***-****-{}\t\tBalance: ${:.2f}'.format(account.account_number[-4:],
-                                                                                  account.balance), pady=10,
-                           command=lambda: select_option(account))
-        button.grid(row=row, column=0, columnspan=2, sticky='nesw')
+        button = ttk.Button(text=translate('Account: ***-****-{}\t\t'
+                                           'Balance: ${:.2f}'.format(account.account_number[-4:], account.balance)),
+                            command=lambda: select_option(account))
+        button.grid(row=row, column=0, columnspan=2, sticky='nesw', ipady=10)
         elements['account button {}'.format(row - 1)] = button
         row += 1
-    new_account_button = tk.Button(master=root, text='Start an Account', command=lambda: new_account_win(), pady=10)
-    new_account_button.grid(row=row, column=0, columnspan=2, sticky='nesw')
+    new_account_button = ttk.Button(master=root, text=translate('Start an Account'), command=lambda: new_account_win())
+    new_account_button.grid(row=row, column=0, columnspan=2, sticky='nesw', ipady=10)
     elements['back button'] = back_btn
     elements['new_account'] = new_account_button
 
@@ -181,38 +236,105 @@ def documents_window(user):
         back_btn.config(command=lambda: documents_window(user))
         with open('BankStatement.txt', 'r') as f:
             statement = f.read()
-            statement_label = tk.Label(master=root, text='Statement:\n\n{}'.format(statement), bg='white')
-            statement_label.grid(row=2, column=0, columnspan=2, sticky='nesw')
-            elements['statement label'] = statement_label
+            text = 'Statement:\n\n{}'.format(statement)
+            statement_combobox = ttk.Combobox(master=root, text=translate(text))
+            statement_combobox.grid(row=2, column=0, columnspan=2, sticky='nesw')
+            elements['statement combobox'] = statement_combobox
 
     def notices_window():
         clear_window(exclude=['img label', 'signout button', 'back button'])
         back_btn.config(command=lambda: documents_window(user))
         with open('BankNotices.txt', 'r') as f:
             notices = f.read()
-            notices_label = tk.Label(master=root, text='Notices:\n\n{}'.format(notices), bg='white')
+            notices_label = ttk.Label(master=root, text=translate('Notices:\n\n{}'.format(notices)), style='BW.TLabel')
             notices_label.grid(row=2, column=0, columnspan=2, sticky='nesw')
             elements['notices label'] = notices_label
 
     clear_window(exclude=['img label', 'signout button'])
     root.title('Josepe Bank (not a real bank) - {}\'s Documents'.format(user.name.split()[0]))
-    back_btn = tk.Button(master=root, text='Back', command=lambda: homepage_window(user))
-    statement_button = tk.Button(master=root, text='Statement', pady=10, command=statement_window)
-    notices_button = tk.Button(master=root, text='Notices', pady=10, command=notices_window)
+    back_btn = ttk.Button(master=root, text=translate('Back'), command=lambda: homepage_window(user))
+    statement_button = ttk.Button(master=root, text=translate('Statement'), command=statement_window)
+    notices_button = ttk.Button(master=root, text=translate('Notices'), command=notices_window)
     back_btn.grid(row=1, column=0, sticky='nsw')
-    statement_button.grid(row=2, column=0, columnspan=2, sticky='nesw')
-    notices_button.grid(row=3, column=0, columnspan=2, sticky='nesw')
+    statement_button.grid(row=2, column=0, columnspan=2, sticky='nesw', ipady=10)
+    notices_button.grid(row=3, column=0, columnspan=2, sticky='nesw', ipady=10)
     elements['back button'] = back_btn
     elements['statement button'] = statement_button
     elements['notices button'] = notices_button
 
 
 def settings_window(user):
+    def account_settings():
+        clear_window(exclude=['img label', 'signout button', 'back button'])
+        back_btn.config(command=lambda: settings_window(user))
+
+    def language_settings():
+        clear_window(exclude=['img label', 'signout button', 'back button'])
+        back_btn.config(command=lambda: settings_window(user))
+        select_lang_lbl = ttk.Label(master=root, text=translate('Select Language:'), style='BW.TLabel')
+        language_chosen = ttk.Combobox(master=root, textvariable=lang_val)
+        language_chosen.bind('<<ComboboxSelected>>', update_language)
+        language_chosen['values'] = (
+            'Arabic',
+            'Armenian',
+            'Bulgarian',
+            'Czech',
+            'Chinese',
+            'Danish',
+            'Dutch',
+            'English',
+            'Estonian',
+            'Finnish',
+            'French',
+            'German',
+            'Greek',
+            'Hebrew',
+            'Hindi',
+            'Hungarian',
+            'Indonesian',
+            'Italian',
+            'Japanese',
+            'Korean',
+            'Latin',
+            'Macedonian',
+            'Nepali',
+            'Norwegian',
+            'Polish',
+            'Portuguese',
+            'Romanian',
+            'Russian',
+            'Slovak',
+            'Slovenian',
+            'Somali',
+            'Spanish',
+            'Swedish',
+            'Swahili',
+            'Thai',
+            'Turkish',
+            'Ukrainian',
+            'Vietnamese',
+            'Welsh',
+            'Zulu'
+        )
+        select_lang_lbl.grid(row=2, column=0)
+        language_chosen.grid(row=2, column=1)
+        elements['blank label'].grid(row=3, column=0, columnspan=2)
+        language_chosen.current()
+        elements['select language label'] = select_lang_lbl
+        elements['language combobox'] = language_chosen
+
     clear_window(exclude=['img label', 'signout button'])
     root.title('Josepe Bank (not a real bank) - {}\'s Settings'.format(user.name.split()[0]))
-    back_btn = tk.Button(master=root, text='Back', command=lambda: homepage_window(user))
+    back_btn = ttk.Button(master=root, text=translate('Back'), command=lambda: homepage_window(user))
+
+    account_settings_btn = ttk.Button(master=root, text=translate('My Account'), command=account_settings)
+    language_settings_btn = ttk.Button(master=root, text=translate('Language'), command=language_settings)
     back_btn.grid(row=1, column=0, sticky='nsw')
+    account_settings_btn.grid(row=2, column=0, columnspan=2, sticky='nesw', ipady=10)
+    language_settings_btn.grid(row=3, column=0, columnspan=2, sticky='nesw', ipady=10)
     elements['back button'] = back_btn
+    elements['account settings button'] = account_settings_btn
+    elements['language settings button'] = language_settings_btn
 
 
 def homepage_window(user):
@@ -227,13 +349,13 @@ def homepage_window(user):
     img_3 = ImageTk.PhotoImage(Image.open('settings.jpg'))
     img_4 = img_logo.resize((604, 180), Image.ANTIALIAS)
     img_4 = ImageTk.PhotoImage(img_4)
-    img_label = tk.Label(master=root, image=img_4, padx=0)
-    welcome_label = tk.Label(master=root, text='Welcome {}!'.format(user.name.split()[0]), bg='white', padx=5, pady=10,
-                             anchor='w')
-    signout_button = tk.Button(master=root, text='Sign out', command=sign_out)
-    accounts_button = tk.Button(master=root, image=img_2, command=lambda: accounts_window(user))
-    documents_button = tk.Button(master=root, image=img_1, command=lambda: documents_window(user))
-    settings_button = tk.Button(master=root, image=img_3, command=lambda: settings_window(user))
+    img_label = ttk.Label(master=root, image=img_4, style='BW.TLabel')
+    welcome_label = ttk.Label(master=root, text=translate('Welcome {}!'.format(user.name.split()[0])), anchor='w',
+                              style='BW.TLabel')
+    signout_button = ttk.Button(master=root, text=translate('Sign out'), command=sign_out)
+    accounts_button = ttk.Button(master=root, image=img_2, command=lambda: accounts_window(user))
+    documents_button = ttk.Button(master=root, image=img_1, command=lambda: documents_window(user))
+    settings_button = ttk.Button(master=root, image=img_3, command=lambda: settings_window(user))
     documents_button.image, accounts_button.image, settings_button.image, img_label.image = img_1, img_2, img_3, img_4
     # grid elements
     img_label.grid(row=0, column=0, columnspan=2, sticky='nesw')
@@ -263,33 +385,33 @@ def new_user_window():
         email_pattern = re.compile(r'^([a-zA-Z0-9_\-.]+)@([a-zA-Z0-9_\-.]+)\.([a-zA-Z]{2,5})$')
         email_matches = email_pattern.finditer(email)
         if not [i for i in email_matches]:
-            messagebox.showinfo(message='Not a valid email address')
+            messagebox.showinfo(message=translate('Not a valid email address'))
             return -1
         # verify password
         if password == confirmed_pass:
             password_pattern = re.compile(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$')
             password_matches = password_pattern.finditer(password)
             if not [i for i in password_matches]:
-                messagebox.showinfo(message='The password must contain:\n  - A number\n  - A lowercase letter\n  - An '
-                                            'uppercase letter')
+                messagebox.showinfo(message=translate('The password must contain:\n  - A number\n  - A lowercase '
+                                                      'letter\n  - An uppercase letter'))
                 return -1
         else:
-            messagebox.showinfo(message='Password and Confirmed Password should be the same')
+            messagebox.showinfo(message=translate('Password and Confirmed Password should be the same'))
             return -1
         # verify date of birth
         date_pattern = re.compile(r'^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d$')
         date_matches = date_pattern.finditer(date_of_birth)
         if not [i for i in date_matches]:
-            messagebox.showinfo(message='Enter a valid date of birth (DD/MM/YYYY)')
+            messagebox.showinfo(message=translate('Enter a valid date of birth ') + '(DD/MM/YYYY)')
             return -1
         # verify phone
         phone_pattern = re.compile(r'^[2-9]\d{2}-?\d{3}-?\d{4}$')
         password_matches = phone_pattern.finditer(phone)
         if not [i for i in password_matches]:
-            messagebox.showinfo(message='Enter a valid phone number')
+            messagebox.showinfo(message=translate('Enter a valid phone number'))
             return -1
         if not address:
-            messagebox.showinfo(message='Enter an address')
+            messagebox.showinfo(message=translate('Enter an address'))
             return -1
         date_of_birth = datetime.strptime(date_of_birth, '%m/%d/%Y')
         user = Customer(name, date_of_birth, address, phone, email, password, admin)
@@ -298,22 +420,22 @@ def new_user_window():
     # clear old elements from screen
     clear_window(exclude=['comp_logo'])
     # create new elements
-    email_label = tk.Label(master=root, text='Email address: ', font=('Courier', 14), bg='white')
-    email_entry = tk.Entry(master=root, bg='#F0F0F0')
-    pass_label = tk.Label(master=root, text='Password: ', font=('Courier', 14), bg='white')
-    pass_entry = tk.Entry(master=root, bg='#F0F0F0')
-    confirm_pass_label = tk.Label(master=root, text='Confirm password: ', font=('Courier', 14), bg='white')
-    confirm_pass_entry = tk.Entry(master=root, bg='#F0F0F0')
-    create_profile_button = tk.Button(text='Create profile', command=create_account)
-    back_button = tk.Button(master=root, text='{}Back{}'.format(' ' * 25, ' ' * 25), command=login_page)
-    name_label = tk.Label(master=root, text='Full name: ', font=('Courier', 14), bg='white')
-    name_entry = tk.Entry(master=root, bg='#F0F0F0')
-    DOB_label = tk.Label(master=root, text='Date of Birth: ', font=('Courier', 14), bg='white')
-    DOB_entry = tk.Entry(master=root, bg='#F0F0F0', fg='grey')
-    phone_label = tk.Label(master=root, text='Phone number: ', font=('Courier', 14), bg='white')
-    phone_entry = tk.Entry(master=root, bg='#F0F0F0', fg='grey')
-    address_label = tk.Label(master=root, text='Address: ', font=('Courier', 14), bg='white')
-    address_entry = tk.Entry(master=root, bg='#F0F0F0')
+    email_label = ttk.Label(master=root, text=translate('Email address: '), style='BW.TLabel')
+    email_entry = ttk.Entry(master=root)
+    pass_label = ttk.Label(master=root, text=translate('Password: '), style='BW.TLabel')
+    pass_entry = ttk.Entry(master=root)
+    confirm_pass_label = ttk.Label(master=root, text=translate('Confirm password: '), style='BW.TLabel')
+    confirm_pass_entry = ttk.Entry(master=root)
+    create_profile_button = ttk.Button(text=translate('Create profile'), command=create_account)
+    back_button = ttk.Button(master=root, text=translate('{}Back{}'.format(' ' * 25, ' ' * 25)), command=login_page)
+    name_label = ttk.Label(master=root, text=translate('Full name: '), style='BW.TLabel')
+    name_entry = ttk.Entry(master=root)
+    DOB_label = ttk.Label(master=root, text=translate('Date of Birth: '), style='BW.TLabel')
+    DOB_entry = ttk.Entry(master=root)
+    phone_label = ttk.Label(master=root, text=translate('Phone number: '), style='BW.TLabel')
+    phone_entry = ttk.Entry(master=root)
+    address_label = ttk.Label(master=root, text=translate('Address: '), style='BW.TLabel')
+    address_entry = ttk.Entry(master=root)
     # grid new elements
     email_label.grid(row=2, column=0, padx=5, pady=5)
     email_entry.grid(row=2, column=1, padx=15, pady=5, sticky='ew', columnspan=2)
@@ -363,36 +485,37 @@ def login_page():
         password_attempt = password_entry.get()
         success, customer = admin.customer_login(username_attempt, password_attempt)
         if login_attempts >= 2:
-            messagebox.showinfo(message='Too many login attempts')
+            messagebox.showinfo(message=translate('Too many login attempts'))
         elif username_attempt.strip() == '':
-            messagebox.showinfo(message='Username field empty')
+            messagebox.showinfo(message=translate('Username field empty'))
         elif password_attempt.strip() == '':
-            messagebox.showinfo(message='Password field empty')
+            messagebox.showinfo(message=translate('Password field empty'))
         elif success == (True, True):
             homepage_window(customer)
         elif success == (True, False):
-            messagebox.showinfo(message='Incorrect password')
+            messagebox.showinfo(message=translate('Incorrect password'))
             login_attempts += 1
         else:
-            messagebox.showinfo(message='Not a valid username')
+            messagebox.showinfo(message=translate('Not a valid username'))
 
     for old_el in elements.values():
         old_el.grid_forget()  # clear screen
     elements.clear()  # clear dictionary
     opening_logo = ImageTk.PhotoImage(img_logo)
-    comp_name_logo = tk.Label(master=root, image=opening_logo)
+    comp_name_logo = ttk.Label(master=root, image=opening_logo, style='BW.TLabel')
     comp_name_logo.image = opening_logo
-    username_label = tk.Label(master=root, text='Username: ', fg='black', bg='white', font=('Courier', 14))
-    username_entry = tk.Entry(master=root, bg='#F0F0F0')
-    password_label = tk.Label(master=root, text='Password: ', fg='black', bg='white', font=('Courier', 14))
-    password_entry = tk.Entry(master=root, bg='#F0F0F0')
-    login_button = tk.Button(master=root, text='Login', font=('Courier', 14), command=login_request)
-    new_button = tk.Button(master=root, text='New?', font=('Courier', 14), command=new_user_window)
+    username_label = ttk.Label(master=root, text=translate('Username: '), style='BW.TLabel')
+    username_entry = ttk.Entry(master=root)
+    password_label = ttk.Label(master=root, text=translate('Password: '), style='BW.TLabel')
+    password_entry = ttk.Entry(master=root)
+    login_button = ttk.Button(master=root, text=translate('Login'), command=login_request)
+    new_button = ttk.Button(master=root, text=translate('New?'), command=new_user_window)
+    blank_label = ttk.Label(master=root, text=' ', style='BW.TLabel')
     # grid elements for window 1
     comp_name_logo.grid(row=0, column=0, columnspan=2)
-    username_label.grid(row=1, column=0, padx=5, pady=5)
+    username_label.grid(row=1, column=0, pady=5)
     username_entry.grid(row=1, column=1, padx=15, pady=5, sticky='ew')
-    password_label.grid(row=2, column=0, padx=5, pady=5)
+    password_label.grid(row=2, column=0, pady=5)
     password_entry.grid(row=2, column=1, padx=15, pady=5, sticky='ew')
     login_button.grid(row=3, column=1, padx=5, pady=5)
     new_button.grid(row=3, column=0, padx=5, pady=5)
@@ -403,6 +526,7 @@ def login_page():
     elements['password entry'] = password_entry
     elements['login button'] = login_button
     elements['new button'] = new_button
+    elements['blank label'] = blank_label
 
 
 if __name__ == '__main__':
@@ -412,8 +536,57 @@ if __name__ == '__main__':
     root.tk.call('wm', 'iconphoto', root._w, logo_icon)
     root.configure(bg='white')
     img_logo = Image.open('JosepeBankLogo.png')
+    tran = Translator()
     elements = {}
+    settings = {'language': 'en'}
     radio_val = tk.StringVar()
     radio_val2 = tk.StringVar()
+    lang_val = tk.StringVar()
+    lang_symbols = {
+        'Arabic': 'ar',
+        'Armenian': 'hy',
+        'Bulgarian': 'bg',
+        'Czech': 'cs',
+        'Chinese': 'zh-cn',
+        'Danish': 'da',
+        'Dutch': 'nl',
+        'English': 'en',
+        'Estonian': 'et',
+        'Finnish': 'fi',
+        'French': 'fr',
+        'German': 'de',
+        'Greek': 'el',
+        'Hebrew': 'iw',
+        'Hindi': 'hi',
+        'Hungarian': 'hu',
+        'Indonesian': 'id',
+        'Italian': 'it',
+        'Japanese': 'ja',
+        'Korean': 'ko',
+        'Latin': 'la',
+        'Macedonian': 'mk',
+        'Nepali': 'ne',
+        'Norwegian': 'no',
+        'Polish': 'pl',
+        'Portuguese': 'pt',
+        'Romanian': 'ro',
+        'Russian': 'ru',
+        'Slovak': 'sk',
+        'Slovenian': 'sl',
+        'Somali': 'so',
+        'Spanish': 'es',
+        'Swedish': 'sv',
+        'Swahili': 'sw',
+        'Thai': 'th',
+        'Turkish': 'tr',
+        'Ukrainian': 'uk',
+        'Vietnamese': 'vi',
+        'Welsh': 'cy',
+        'Zulu': 'zu'
+    }
     login_page()
+    label_style = ttk.Style()
+    label_style.configure('BW.TLabel', foreground='black', background='white')
+    radio_style = ttk.Style()
+    radio_style.configure('Wild.TRadiobutton', foreground='black', background='white')
     root.mainloop()

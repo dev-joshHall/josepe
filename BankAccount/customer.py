@@ -13,6 +13,3 @@ class Customer:
     def __repr__(self):
         return 'Customer: {}'.format(self.name)
 
-    def logout(self):
-        pass
-
