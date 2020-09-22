@@ -39,6 +39,19 @@ def update_language(_):
         settings['language'] = lang_symbols[lang_val.get()]
 
 
+def update_theme(_):
+    fg, bg = None, None
+    if theme_val.get() in ('', 'Standard Theme'):
+        fg, bg = 'black', 'white'
+    elif theme_val.get() == 'Dark Theme':
+        fg, bg = 'white', '#333333'
+    elif theme_val.get() == 'Red Theme':
+        fg, bg = 'black', '#8E1600'
+    label_style.configure('BW.TLabel', foreground=fg, background=bg)
+    radio_style.configure('Wild.TRadiobutton', foreground=fg, background=bg)
+    root.configure(bg=bg)
+
+
 def handle_focus_in(entry, display):
     if entry.get() == display:
         entry.delete(0, tk.END)
@@ -267,6 +280,16 @@ def settings_window(user):
     def account_settings():
         clear_window(exclude=['img label', 'signout button', 'back button'])
         back_btn.config(command=lambda: settings_window(user))
+        select_theme_lbl = ttk.Label(master=root, text=translate('Select Theme:'), style='BW.TLabel')
+        theme_chosen = ttk.Combobox(master=root, textvariable=theme_val)
+        theme_chosen.bind('<<ComboboxSelected>>', update_theme)
+        theme_chosen['values'] = ('Standard Theme', 'Dark Theme', 'Red Theme')
+        select_theme_lbl.grid(row=2, column=0)
+        theme_chosen.grid(row=2, column=1)
+        elements['blank label'].grid(row=3, column=0, columnspan=2)
+        theme_chosen.current()
+        elements['select theme label'] = select_theme_lbl
+        elements['theme combobox'] = theme_chosen
 
     def language_settings():
         clear_window(exclude=['img label', 'signout button', 'back button'])
@@ -325,6 +348,7 @@ def settings_window(user):
 
     clear_window(exclude=['img label', 'signout button'])
     root.title('Josepe Bank (not a real bank) - {}\'s Settings'.format(user.name.split()[0]))
+    elements['signout button'].config(text=translate('Sign out'))
     back_btn = ttk.Button(master=root, text=translate('Back'), command=lambda: homepage_window(user))
 
     account_settings_btn = ttk.Button(master=root, text=translate('My Account'), command=account_settings)
@@ -542,6 +566,7 @@ if __name__ == '__main__':
     radio_val = tk.StringVar()
     radio_val2 = tk.StringVar()
     lang_val = tk.StringVar()
+    theme_val = tk.StringVar()
     lang_symbols = {
         'Arabic': 'ar',
         'Armenian': 'hy',
