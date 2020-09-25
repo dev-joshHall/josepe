@@ -1,5 +1,7 @@
 ###Prime Detector Project
+
 ##CS 2810 Computer Organization and Archetecture Final Project (Summer 2020)
+
 ##By Joshua Hall, UVU College of Engineering and Technology
 
 The project is writen in LC-3 assembly language and is meant to demonstate that I am capable of working with low-level programing and problem solving.
